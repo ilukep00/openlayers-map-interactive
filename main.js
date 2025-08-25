@@ -1,110 +1,79 @@
-import {Map,View} from 'ol';
-import TileLayer from 'ol/layer/Tile';
-import { fromLonLat } from 'ol/proj';
-import {XYZ} from 'ol/source'
-import VectorLayer from 'ol/layer/Vector.js';
-import VectorSource from 'ol/source/Vector.js';
-import GeoJSON from 'ol/format/GeoJSON.js';
-import Draw from 'ol/interaction/Draw.js';
-import Modify from 'ol/interaction/Modify.js';
-import Select from 'ol/interaction/Select.js';
-import { click } from 'ol/events/condition';
-
+import {createMap, createVectorSource, createVectorLayer, createDraw, initializeModifyInteraction, initializeSelectInteraction, createGeoJSON} from './openlayersUtilities';
 
 let featuresJSON;
-const geoJSONFormat = new GeoJSON({featureProjection:'EPSG:3857'});
+let draw;
 
-const map = new Map({
-  target: 'map',
-  layers: [
-    new TileLayer({
-      source: new XYZ({
-        url:'https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}',
-        attributions: 'Google Inc.',
-        attributionsCollapsible: false,
-      })
-    })
-  ],
-  view: new View({
-    center: fromLonLat([-1.6389912,42.8171412]),
-    zoom: 15
-  })
-})
-const simpleVectorSource = new VectorSource();
-const simpleVectorLayer = new VectorLayer({
-  source: simpleVectorSource
-});
+const handleElement = (id, eventToHandle, methodToCall) => {
+  const element = document.getElementById(id);
+  element.addEventListener(eventToHandle, function(){
+    methodToCall();
+  });
+  return element;
+}
 
-const i_modify = new Modify({source: simpleVectorSource});
-i_modify.setActive(false);
-map.addInteraction(i_modify);
+const drawSelectorOnClick = () => {
+  cleanInteractions([i_delete,i_modify], false);
+  const {value = 'no-option'} = drawSelector;
+  if(value !== 'no-option'){
+    draw = createDraw({type: value, source: simpleVectorSource});
+    map.addInteraction(draw)
+  } 
+}
 
-const i_delete = new Select({condition:click})
-i_delete.setActive(false);
-map.addInteraction(i_delete);
-
-
-simpleVectorSource.on('change', function onChange(){
-  featuresJSON = geoJSONFormat.writeFeatures(simpleVectorSource.getFeatures());
-})
-
-map.addLayer(simpleVectorLayer)
-
-const cleanButton = document.getElementById("clean");
-cleanButton.addEventListener("click", function onClick(){
-  cleanAllInteractions();
-  drawSelector.value = 'no-option'
+const cleanButtonOnClick = () => {
+  cleanInteractions([i_delete,i_modify]);
   simpleVectorSource.clear()
-})
+}
 
-const downloadButton = document.getElementById("download");
-
-downloadButton.addEventListener('click', function downloadOnClick(){
-   cleanAllInteractions();
-   drawSelector.value = 'no-option'
+const downloadButtonOnClick = () => {
+   cleanInteractions([i_delete,i_modify]);
    var tempLink = document.createElement("a");
    tempLink.href='data:application/json;charset=utf-8,' + encodeURIComponent(featuresJSON)
    tempLink.download='GeoLayer.json'
    tempLink.click();
-})
+}
 
-let draw;
-const drawSelector = document.getElementById("draw-option");
-drawSelector.addEventListener('change', function(){
-  cleanAllInteractions();
-  const {value = 'no-option'} = drawSelector;
-  if(value !== 'no-option'){
-    draw = new Draw({type: value, source: simpleVectorSource});
-    map.addInteraction(draw)
-  } 
-})
-
-
-const modifyButton = document.getElementById("modify");
-modifyButton.addEventListener('click', function(){
-  map.removeInteraction(draw);
-  drawSelector.value = 'no-option'
-  i_delete.setActive(false);
+const modifyButtonOnClick = () => {
+  cleanInteractions([i_delete])
   i_modify.setActive(!i_modify.getActive());
-});
+}
 
-
-const deleteButton = document.getElementById("delete");
-deleteButton.addEventListener('click', function(){
-  map.removeInteraction(draw);
-  i_modify.setActive(false);
-  drawSelector.value = 'no-option';
+const deleteButtonOnClick = () => {
+  cleanInteractions([i_modify])
   i_delete.setActive(!i_delete.getActive());
+}
+
+const cleanInteractions = (interactions, resetDrawValue = true) => {
+  if(interactions.length > 0){
+    interactions.forEach(element => {
+      element.setActive(false)
+    });
+  }
+  map.removeInteraction(draw);
+  drawSelector.value = resetDrawValue?'no-option':drawSelector.value;
+}
+const geoJSONFormat = createGeoJSON({featureProjection:'EPSG:3857'});
+
+const map = createMap('map','https://mt1.google.com/vt/lyrs=r&x={x}&y={y}&z={z}', 'Google Inc.',[-1.6389912,42.8171412] )
+const simpleVectorSource = createVectorSource();
+const simpleVectorLayer = createVectorLayer(simpleVectorSource);
+map.addLayer(simpleVectorLayer)
+const i_modify = initializeModifyInteraction(simpleVectorSource, map);
+const i_delete = initializeSelectInteraction(map);
+
+simpleVectorSource.on('change', function onChange(){
+  featuresJSON = geoJSONFormat.writeFeatures(simpleVectorSource.getFeatures());
 })
 
 i_delete.on('select', function(e){
   simpleVectorSource.removeFeatures(e.selected);
 })
 
+const drawSelector = handleElement('draw-option', 'change', drawSelectorOnClick)
+handleElement('clean', 'click',cleanButtonOnClick)
+handleElement('download', 'click', downloadButtonOnClick)
+handleElement('modify', 'click', modifyButtonOnClick)
+handleElement('delete', 'click', deleteButtonOnClick)
 
-const cleanAllInteractions = () => {
-  i_modify.setActive(false);
-  i_delete.setActive(false);
-  map.removeInteraction(draw);
-}
+
 
