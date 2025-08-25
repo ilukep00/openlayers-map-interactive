@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel="stylesheet" href="style.css">
+    <title>OL</title>
+</head>
+<body>
+    <div id ="tools">
+        <button type="button" id="clean" class="tool-item">Clean</button>
+        <button type="button" id="download" class="tool-item">Download</button>
+        <select name="draw-option" id="draw-option" class="tool-item">
+            <option value="no-option" selected>No Draw</option>
+            <option value="Point">Point</option>
+            <option value="LineString">Line</option>
+            <option value="Polygon">Polygon</option>
+        </select>
+        <button type="button" id="modify" class="tool-item">Modify</button>
+        <button type="button" id="delete" class="tool-item">Delete</button>
+    </div>
+    <div id="map"></div>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>
