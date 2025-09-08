@@ -9,6 +9,10 @@ import Select from "ol/interaction/Select.js";
 import { click } from "ol/events/condition";
 import Draw from "ol/interaction/Draw.js";
 import GeoJSON from "ol/format/GeoJSON.js";
+import Style from "ol/style/Style";
+import Stroke from "ol/style/Stroke.js";
+import Fill from "ol/style/Fill.js";
+import CircleStyle from "ol/style/Circle.js";
 
 const createMap = (
   target,
@@ -42,7 +46,28 @@ const createVectorSource = (options = undefined) => {
 };
 
 const createVectorLayer = (source) => {
-  return new VectorLayer({ source });
+  return new VectorLayer({
+    source,
+    style: new Style({
+      stroke: new Stroke({
+        color: "#F0ED29",
+        width: 3,
+      }),
+      fill: new Fill({
+        color: "rgba(137,244,51, 0.5)",
+      }),
+      image: new CircleStyle({
+        stroke: new Stroke({
+          color: "#F0ED29",
+          width: 4,
+        }),
+        radius: 8,
+        fill: new Fill({
+          color: "rgba(137,244,51, 0.5)",
+        }),
+      }),
+    }),
+  });
 };
 
 const createDraw = (options) => {
